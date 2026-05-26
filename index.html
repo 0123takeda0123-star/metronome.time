@@ -59,8 +59,9 @@
   }
 
   /* スイング */
-  .running .needle {
+  .running .needle {  
     animation: swing linear infinite;
+  　animation-duration: 1s; 
   }
 
   @keyframes swing {
@@ -137,6 +138,10 @@ function scheduler() {
 
   document.getElementById("bpm").textContent = bpm + " BPM";
   document.getElementById("mode").textContent = mode;
+
+  /* 針の揺れ速度をBPM同期 */
+  const duration = (60 / bpm) * 2; // 往復なので×2
+  document.querySelector(".needle").style.animationDuration = duration + "s";
 
   while (nextTime < ctx.currentTime + 0.1) {
     beep(nextTime);
