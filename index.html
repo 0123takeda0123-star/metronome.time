@@ -169,7 +169,6 @@ function beep(time) {
 function scheduler() {
   const bpm = getBPM();
   const interval = 60 / bpm;
-
   document.getElementById("bpm").textContent = bpm + " BPM";
   document.getElementById("mode").textContent = mode;
 
@@ -186,15 +185,10 @@ function scheduler() {
 /* start */
 async function start() {
   await ctx.resume();
-
   isRunning = true;
-
   document.getElementById("metro").classList.remove("idle");
-
   nextTime = ctx.currentTime;
-
-  updateNeedle(); // ←追加
-
+  updateNeedle(); 
   intervalId = setInterval(scheduler, 1000);
 }
 
@@ -214,7 +208,7 @@ document.getElementById("metro").addEventListener("click", () => {
 
 /* mode toggle */
 document.getElementById("toggle").addEventListener("click", () => {
-  mode = mode === "date" ? "minute *2" : "date *4";
+  mode = mode === "date" ? "minute" : "date";
 });
 </script>
 
