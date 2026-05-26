@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Time Metronome</title>
+
+<style>
+  body {
+    margin: 0;
+    background: #0e0f12;
+    color: #e8e8e8;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .panel {
+    text-align: center;
+  }
+
+  .bpm {
+    font-size: 32px;
+    margin: 10px 0;
+    letter-spacing: 1px;
+  }
+
+  .mode {
+    font-size: 12px;
+    opacity: 0.6;
+  }
+
+  /* メトロノーム針 */
+  .metronome {
+    width: 200px;
+    height: 200px;
+    border: 2px solid #333;
+    border-radius: 50%;
+    position: relative;
+    margin: 20px auto;
+  }
+
+  .needle {
+    width: 2px;
+    height: 90px;
+    background: #e8e8e8;
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    transform-origin: bottom center;
+    transform: rotate(0deg);
+  }
+
+  .idle .needle {
+    transform: rotate(0deg);
+  }
+
+  /* スイング */
+  .running .needle {
+    animation: swing linear infinite;
+  }
+
+  @keyframes swing {
+    0%   { transform: rotate(-35deg); }
+    100% { transform: rotate(35deg); }
+  }
+
+  button {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="panel">
+  <div class="bpm" id="bpm">-- BPM</div>
+  <div class="mode" id="mode">click pin to start</div>
+
+  <div class="metronome idle" id="metro">
+    <div class="needle"></div>
+  </div>
+
+  <button id="toggle">toggle mode</button>
+</div>
+
+<script>
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+const ctx = new AudioContextClass();
+
+let mode = "date"; // date or minute
+let isRunning = false;
+
+let nextTime = 0;
+let intervalId = null;
+
+/* BPM計算 */
+function getBPM() {
+  const now = new Date();
+
+  if (mode === "date") {
+    return now.getDate() * 4;
+  } else {
+    return now.getMinutes() * 2;
+  }
+}
+
+/* beep */
+function beep(time) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = "sine";
+  osc.frequency.value = 880;
+
+  gain.gain.setValueAtTime(1, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start(time);
+  osc.stop(time + 0.06);
+}
+
+/* scheduler */
+function scheduler() {
+  const bpm = getBPM();
+  const interval = 60 / bpm;
+
+  document.getElementById("bpm").textContent = bpm + " BPM";
+  document.getElementById("mode").textContent = mode;
+
+  while (nextTime < ctx.currentTime + 0.1) {
+    beep(nextTime);
+    nextTime += interval;
+  }
+}
+
+/* start */
+async function start() {
+  await ctx.resume();
+
+  isRunning = true;
+  document.getElementById("metro").classList.remove("idle");
+  document.getElementById("metro").classList.add("running");
+
+  nextTime = ctx.currentTime;
+
+  intervalId = setInterval(scheduler, 25);
+}
+
+/* stop */
+function stop() {
+  isRunning = false;
+  clearInterval(intervalId);
+  document.getElementById("metro").classList.remove("running");
+  document.getElementById("metro").classList.add("idle");
+}
+
+/* pin click */
+document.getElementById("metro").addEventListener("click", () => {
+  if (!isRunning) start();
+  else stop();
+});
+
+/* mode toggle */
+document.getElementById("toggle").addEventListener("click", () => {
+  mode = mode === "date" ? "minute" : "date";
+});
+</script>
+
+</body>
+</html>
